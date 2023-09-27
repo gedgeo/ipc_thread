@@ -1,0 +1,48 @@
+#include <stdio.h>
+#include <pthread.h>
+
+typedef struct {
+    int v1;
+    int v2;
+    int v3;
+} laStruct;
+
+void* threadFunction(void* arg) {
+    laStruct* data = (laStruct*)arg;
+    int thread_id = *((int*)data);
+    
+    // Mise à jour du champ approprié de la structure en fonction de thread_id
+    if (thread_id == 0) {
+        data->v1 = 1;
+        printf("Thread %d met à jour v1 avec la valeur 1\n", thread_id);
+    } else if (thread_id == 1) {
+        data->v2 = 2;
+        printf("Thread %d met à jour v2 avec la valeur 2\n", thread_id);
+    } else {
+        data->v3 = 3;
+        printf("Thread %d met à jour v3 avec la valeur 3\n", thread_id);
+    }
+
+    pthread_exit(NULL);
+}
+
+int main() {
+    laStruct myStruct = {0, 0, 0};
+    pthread_t threads[3];
+    int thread_ids[3] = {0, 1, 2};
+
+    for (int i = 0; i < 3; i++) {
+        if (pthread_create(&threads[i], NULL, threadFunction, &myStruct) != 0) {
+            fprintf(stderr, "Erreur lors de la création du thread %d\n", i);
+            return 1;
+        }
+    }
+
+    for (int i = 0; i < 3; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    printf("v1 = %d, v2 = %d, v3 = %d\n", myStruct.v1, myStruct.v2, myStruct.v3);
+
+    return 0;
+}
