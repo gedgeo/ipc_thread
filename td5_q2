@@ -1,0 +1,62 @@
+#include <stdio.h>
+#include <pthread.h>
+
+typedef struct {
+    int v1;
+    int v2;
+    int v3;
+} laStruct;
+
+typedef struct {
+    laStruct* data;
+    int field;
+    int value;
+} ThreadArgs;
+
+void* threadFunction(void* args) {
+    ThreadArgs* threadArgs = (ThreadArgs*)args;
+    laStruct* data = threadArgs->data;
+    int field = threadArgs->field;
+    int value = threadArgs->value;
+
+
+    if (field == 1) {
+        data->v1 = value;
+        printf("Thread met à jour v1 avec la valeur %d\n", value);
+    } else if (field == 2) {
+        data->v2 = value;
+        printf("Thread met à jour v2 avec la valeur %d\n", value);
+    } else if (field == 3) {
+        data->v3 = value;
+        printf("Thread met à jour v3 avec la valeur %d\n", value);
+    }
+
+    pthread_exit(NULL);
+}
+
+int main() {
+    laStruct myStruct = {0, 0, 0};
+    pthread_t threads[3];
+    ThreadArgs threadArgs[3];
+
+    // Création des threads
+    for (int i = 0; i < 3; i++) {
+        threadArgs[i].data = &myStruct;
+        threadArgs[i].field = i + 1;
+        threadArgs[i].value = i + 1;
+        if (pthread_create(&threads[i], NULL, threadFunction, &threadArgs[i]) != 0) {
+            fprintf(stderr, "Erreur de création du thread %d\n", i);
+            return 1;
+        }
+    }
+
+
+    for (int i = 0; i < 3; i++) {
+        pthread_join(threads[i], NULL);
+        printf("attente de fin des threads \n");
+    }
+
+    printf("v1 = %d, v2 = %d, v3 = %d\n", myStruct.v1, myStruct.v2, myStruct.v3);
+
+    return 0;
+}
