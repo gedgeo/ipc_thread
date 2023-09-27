@@ -1,0 +1,68 @@
+#include <stdio.h>
+#include <pthread.h>
+
+typedef struct {
+    int v1;
+    int v2;
+    int v3;
+} laStruct;
+
+// Structure pour passer des arguments aux threads
+typedef struct {
+    laStruct* data;
+    int thread_id;
+    pthread_mutex_t* mutex;
+} ThreadArgs;
+
+// Fonction exécutée par chaque thread
+void* threadFunction(void* args) {
+    ThreadArgs* threadArgs = (ThreadArgs*)args;
+    laStruct* data = threadArgs->data;
+    pthread_mutex_t* mutex = threadArgs->mutex;
+
+    // Verrouiller le mutex pour accéder aux champs de la structure
+    pthread_mutex_lock(mutex);
+
+    // Mettre à jour les trois champs de la structure avec l'identifiant du thread
+    data->v1 = threadArgs->thread_id + 1;
+    data->v2 = threadArgs->thread_id + 1;
+    data->v3 = threadArgs->thread_id + 1;
+
+    printf("Thread %d met à jour v1, v2 et v3 avec la valeur %d\n", threadArgs->thread_id, threadArgs->thread_id + 1);
+
+    // Déverrouiller le mutex après avoir mis à jour la structure
+    pthread_mutex_unlock(mutex);
+
+    pthread_exit(NULL);
+}
+
+int main() {
+    laStruct myStruct = {0, 0, 0};
+    pthread_t threads[3];
+    ThreadArgs threadArgs[3];
+    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // Initialisation du mutex
+
+    // Création des threads
+    for (int i = 0; i < 3; i++) {
+        threadArgs[i].data = &myStruct;
+        threadArgs[i].thread_id = i;
+        threadArgs[i].mutex = &mutex; // Passer le mutex aux threads
+        if (pthread_create(&threads[i], NULL, threadFunction, &threadArgs[i]) != 0) {
+            fprintf(stderr, "Erreur lors de la création du thread %d\n", i);
+            return 1;
+        }
+    }
+
+    // Attente de la fin des threads
+    for (int i = 0; i < 3; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    // Affichage des valeurs de la structure mise à jour par les threads
+    printf("v1 = %d, v2 = %d, v3 = %d\n", myStruct.v1, myStruct.v2, myStruct.v3);
+
+    // Destruction du mutex
+    pthread_mutex_destroy(&mutex);
+
+    return 0;
+}
